@@ -1,6 +1,8 @@
-#train: D:\Github\RM2025_yolov8\BuffTraining\BuffDataset\images\train
-#val: D:\Github\RM2025_yolov8\BuffTraining\BuffDataset\images\val
-path: ../BuffDataset
+#train: D:\BuffDetect\BuffDataset\images\train
+#val: D:\BuffDetect\BuffDataset\images\train\val
+
+#path: D:/BuffDetect/BuffDataset/
+path: /root/autodl-fs/BuffDataset/
 train: images/train
 val: images/val
 

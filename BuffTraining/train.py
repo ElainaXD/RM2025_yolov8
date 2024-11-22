@@ -16,9 +16,9 @@ if __name__ == '__main__':
 
     # 开始训练模型，确保参数设置正确
     model.train(
-        epochs=100,
+        epochs=15,
         data=data_yaml_path,
         device='cuda',  # 指定训练设备为CUDA
-        batch=16,
+        batch=32,
         cfg=cfg_yaml_path
     )
