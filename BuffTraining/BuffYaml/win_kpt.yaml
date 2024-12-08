@@ -2,7 +2,8 @@
 #val: D:\BuffDetect\BuffDataset\images\train\val
 
 #path: D:/BuffDetect/BuffDataset/
-path: /root/autodl-fs/BuffDataset/
+
+path: /root/autodl-fs/Version1_splited/
 train: images/train
 val: images/val
 
