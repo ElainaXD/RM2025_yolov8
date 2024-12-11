@@ -64,7 +64,7 @@ class Convert:
 
 
 if __name__ == '__main__':
-    data_convert=Convert(r"D:\BuffDetect\3SEDataset\BuffPose\labels")
-    data_convert.pose_2d_3d(res_fold_path=r"D:\BuffDetect\3SEDataset\BuffPose\labels2d",conf=1)
+    data_convert=Convert(r"D:\BuffDetect\3SEDataset\Version2\野生的\labels")
+    data_convert.pose_2d_3d(res_fold_path=r"D:\BuffDetect\3SEDataset\Version2\野生的\labels2d",conf=1)
 
 

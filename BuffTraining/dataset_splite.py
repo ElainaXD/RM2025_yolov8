@@ -4,13 +4,32 @@ import os
 import shutil
 import numpy as np
 
-class Split:
-    def __init__(self, img_source_dir,label_source_dir):
+class DatasetOperation:
+    def __init__(self, img_source_dir=None,label_source_dir=None):
         self.img_source_dir = img_source_dir
         self.label_source_dir = label_source_dir
 
+    def check_source_dir_is_None(self):
+        if self.label_source_dir is None:
+            print("label_source_dir is None")
+            return True
+        if self.img_source_dir is None:
+            print("img_source_dir is None")
+            return True
+        return False
+
+    def set_source_dir(self, img_source_dir, label_source_dir):
+        self.img_source_dir = img_source_dir
+        self.label_source_dir = label_source_dir
+        print("new source updated")
+        return True
+
     # 用于分割数据集与训练集
     def split_train_val(self,target_path):
+
+        if self.check_source_dir_is_None():
+            return
+
         if not Path(self.img_source_dir).is_dir():
             print("Path does not exist!")
             return False
@@ -54,9 +73,15 @@ class Split:
             shutil.copy(val_images_path, val_set_images_dir)
             shutil.copy(val_labels_path, val_set_labels_dir)
 
+        print("splite over")
+
     # 用于分拣目标标签，返回值为两个列表，一个是问题标签列表，这一部分的存在标签格式错误，另一部分是目标标签列表
     # 两个列表中包含的是文件名，包括后缀txt
     def sort_target_labels(self,target_labels):
+
+        if self.check_source_dir_is_None():
+            return
+
         problem_labels_list = []
         target_labels_list = []
         rest_labels_list = []  # 新增列表存储剩余的标签文件名
@@ -95,8 +120,10 @@ class Split:
 
     # 按照目标分割图像与标签并将其放到目标文件夹中
     def split_target(self, target_folder_path, target_labels):
-        problem_labels_list, target_labels_list, rest_labels_list = self.sort_target_labels(target_labels)
+        if self.check_source_dir_is_None():
+            return
 
+        problem_labels_list, target_labels_list, rest_labels_list = self.sort_target_labels(target_labels)
         # 创建目标文件夹路径下的子文件夹
         problem_labels_dir = os.path.join(target_folder_path, 'problem', 'labels')
         problem_images_dir = os.path.join(target_folder_path, 'problem', 'images')
@@ -132,11 +159,47 @@ class Split:
         # 复制rest_labels_list中的文件到rest文件夹
         copy_files(rest_labels_list, rest_labels_dir, rest_images_dir)
 
+    def merge_datasets(self,datasets_paths_list,target_path ):
+        # 在目标路径下创建images和labels文件夹（如果不存在）
+        target_images_path = os.path.join(target_path, 'images')
+        target_labels_path = os.path.join(target_path, 'labels')
+
+        os.makedirs(target_images_path, exist_ok=True)
+        os.makedirs(target_labels_path, exist_ok=True)
+
+        # 遍历每个数据集路径
+        for dataset_path in datasets_paths_list:
+            # 源images和labels文件夹路径
+            source_images_path = os.path.join(dataset_path, 'images')
+            source_labels_path = os.path.join(dataset_path, 'labels')
+
+            # 检查源文件夹是否存在
+            if not os.path.exists(source_images_path):
+                print(f"Warning: {source_images_path} does not exist.")
+                continue
+            if not os.path.exists(source_labels_path):
+                print(f"Warning: {source_labels_path} does not exist.")
+                continue
+
+            # 复制images文件
+            for image_file in os.listdir(source_images_path):
+                source_image_file_path = os.path.join(source_images_path, image_file)
+                target_image_file_path = os.path.join(target_images_path, image_file)
+                shutil.copy(source_image_file_path, target_image_file_path)
+
+            # 复制labels文件
+            for label_file in os.listdir(source_labels_path):
+                source_label_file_path = os.path.join(source_labels_path, label_file)
+                target_label_file_path = os.path.join(target_labels_path, label_file)
+                shutil.copy(source_label_file_path, target_label_file_path)
+
+            print(f"文件夹{dataset_path}已完成")
+
+        return target_images_path, target_labels_path
+
 if __name__ == '__main__':
-    source_images_path = r"D:\BuffDetect\3SEDataset\Version1\images"  # 图片路径
-    source_labels_path = r"D:\BuffDetect\3SEDataset\Version1\labels"
-    target_path = r"D:\BuffDetect\3SEDataset\Version1_splited" # 划分测试集存放路径
-    split=Split(source_images_path,source_labels_path)
-    # split.split_target(target_folder_path=target_path,target_labels=[0,2])
-    split.split_train_val(target_path)
-    print("划分完成！")
+    op = DatasetOperation()
+    dataset_list=[r"D:\BuffDetect\3SEDataset\Dataset\规整的\masked\mask",r"D:\BuffDetect\3SEDataset\Dataset\规整的\masked\origin",r"D:\BuffDetect\3SEDataset\Dataset\野生的\renamed"]
+    imgs_source,labels_source=op.merge_datasets(dataset_list,r"D:\BuffDetect\3SEDataset\3SEBuffv1")
+    op.set_source_dir(img_source_dir=imgs_source,label_source_dir=labels_source)
+    op.split_train_val(r"D:\BuffDetect\3SEDataset\3SEBuffv1\splite")

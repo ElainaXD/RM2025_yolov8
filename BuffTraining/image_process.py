@@ -5,6 +5,9 @@ import numpy as np
 import math
 from rich.progress import Progress
 
+from ultralytics.utils import imshow
+
+
 class ImageProcess:
     def __init__(self):
         self.key_point_color = [[255, 0, 255], [255, 0, 255], [0, 215, 255], [255, 0, 255], [255, 0, 255]]
@@ -94,7 +97,7 @@ class ImageProcess:
         # 创建二值化图像，用来绘制圆环
         binary_image = np.zeros((height, width), dtype=np.uint8)
 
-
+        # 此时已经是像素值了
         label_list=self.get_pixel_label(image_path, label_path)
         for label in label_list:
             cls=label[0]
@@ -137,22 +140,46 @@ class ImageProcess:
                 vertical_end_point = start_point + norm_vertical_vector * line_length / 2
                 vertical_start_point=tuple(vertical_start_point.astype(int))
                 vertical_end_point=tuple(vertical_end_point.astype(int))
-                if not (isinstance(center, tuple) and len(center) == 2):
-                    return None
-                if not (isinstance(outer_radius, int) or isinstance(outer_radius, float)) or outer_radius < 0:
-                    return None
-                # 绘制圆环
-                cv2.circle(binary_image, center, outer_radius,  (255), -1)
-                cv2.circle(binary_image, center, inner_radius, (0), -1)
-                try:
-                    vertical_thickness=max(1,round(inner_radius*0.6))
-                    cv2.line(binary_image, vertical_start_point, vertical_end_point, (0), vertical_thickness,lineType=cv2.LINE_8)
-                    cv2.line(binary_image, start_point, R_center, (0), vertical_thickness,lineType=cv2.LINE_8)
 
-                except cv2.error as e:
-                    print('发生 OpenCV 错误:', e)
-                    print(f"image path: {image_path}")
-                    return None
+
+
+            # 遮盖已经击打的
+            else:
+                x_pixel,y_pixel,width_pixel,height_pixel=label[1:5]
+                center=(x_pixel + round(width_pixel/2),y_pixel+round(height_pixel/2))
+                R_center=(label[5],label[6])
+                outer_radius=round(math.sqrt(width_pixel**2+height_pixel**2)/2)
+                inner_radius=round(outer_radius*0.5)
+
+                origin_vector = (R_center[0] - center[0], R_center[1] - center[1])
+                vertical_vector = np.array([-origin_vector[1], origin_vector[0]])
+                norm_vertical_vector = vertical_vector / np.linalg.norm(vertical_vector)
+                line_length = outer_radius*2
+
+                start_point=(round(center[0]+(R_center[0]-center[0])/2.8), round(center[1]+(R_center[1]-center[1])/2.8))
+                vertical_start_point=start_point - norm_vertical_vector * line_length / 2
+                vertical_end_point=start_point + norm_vertical_vector * line_length / 2
+                vertical_start_point=tuple(vertical_start_point.astype(int))
+                vertical_end_point=tuple(vertical_end_point.astype(int))
+
+            # 绘制
+            if not (isinstance(center, tuple) and len(center) == 2):
+                return None
+            if not (isinstance(outer_radius, int) or isinstance(outer_radius, float)) or outer_radius < 0:
+                return None
+                # 绘制圆环
+            cv2.circle(binary_image, center, outer_radius, (255), -1)
+            cv2.circle(binary_image, center, inner_radius, (0), -1)
+            try:
+                vertical_thickness = max(1, round(inner_radius * 0.6))
+                cv2.line(binary_image, vertical_start_point, vertical_end_point, (0), vertical_thickness,lineType=cv2.LINE_8)
+                cv2.line(binary_image, start_point, R_center, (0), vertical_thickness, lineType=cv2.LINE_8)
+
+            except cv2.error as e:
+                print('发生 OpenCV 错误:', e)
+                print(f"image path: {image_path}")
+                return None
+
         # 遍历这个二值化图像的所有点，如果是白色那就把同样位置的区域在原图上涂成黑色
         for y in range(height):
             for x in range(width):
@@ -160,20 +187,26 @@ class ImageProcess:
                     image[y][x] = [0,0,0]
         return image
 
-    def mask_images(self, image_path, label_path, result_folder_path):
-        origin_images_dir=os.path.join(result_folder_path,'origin_images')
-        origin_labels_dir=os.path.join(result_folder_path,'origin_labels')
-        mask_images_dir=os.path.join(result_folder_path,'mask_images')
-        mask_labels_dir=os.path.join(result_folder_path,'mask_labels')
-        error_images_dir=os.path.join(result_folder_path,'error_images')
-        error_label_dir=os.path.join(result_folder_path,'error_labels')
+    def mask_images(self, image_path, label_path, result_folder_path,rename=None):
+        # 创建目标文件夹结构
+        error_dir = os.path.join(result_folder_path, 'error')
+        mask_dir = os.path.join(result_folder_path, 'mask')
+        origin_dir = os.path.join(result_folder_path, 'origin')
+
+        # 创建子文件夹
+        error_images_dir = os.path.join(error_dir, 'images')
+        error_labels_dir = os.path.join(error_dir, 'labels')
+        mask_images_dir = os.path.join(mask_dir, 'images')
+        mask_labels_dir = os.path.join(mask_dir, 'labels')
+        origin_images_dir = os.path.join(origin_dir, 'images')
+        origin_labels_dir = os.path.join(origin_dir, 'labels')
 
         os.makedirs(origin_images_dir, exist_ok=True)
         os.makedirs(origin_labels_dir, exist_ok=True)
         os.makedirs(mask_images_dir, exist_ok=True)
         os.makedirs(mask_labels_dir, exist_ok=True)
         os.makedirs(error_images_dir, exist_ok=True)
-        os.makedirs(error_label_dir, exist_ok=True)
+        os.makedirs(error_labels_dir, exist_ok=True)
 
         # 获取文件夹下所有文件和文件夹的名称列表
         img_list = os.listdir(image_path)
@@ -196,6 +229,12 @@ class ImageProcess:
                     origin_label_new_name=f"origin_{len(os.listdir(origin_labels_dir))+1}.txt"
                     mask_label_new_name=f"mask_{len(os.listdir(mask_labels_dir))+1}.txt"
 
+                    if rename is not None:
+                        origin_image_new_name=rename+"_"+origin_image_new_name
+                        mask_image_new_name=rename+"_"+mask_image_new_name
+                        origin_label_new_name=rename+"_"+origin_label_new_name
+                        mask_label_new_name=rename+"_"+mask_label_new_name
+
                     origin_image_new_path=os.path.join(origin_images_dir, origin_image_new_name)
                     mask_image_new_path=os.path.join(mask_images_dir, mask_image_new_name)
                     origin_label_new_path=os.path.join(origin_labels_dir, origin_label_new_name)
@@ -204,9 +243,12 @@ class ImageProcess:
                     mask_image = self.mask_peripheral_light(img_dir, label_dir)
                     if mask_image is None:
                         error_image_new_name = f"error_{len(os.listdir(error_images_dir)) + 1}.jpg"
+                        error_label_new_name = f"error_label_{len(os.listdir(error_labels_dir))+1}.txt"
+                        if rename is not None:
+                            error_image_new_name=rename+"_"+error_image_new_name
+                            error_label_new_name=rename+"_"+error_label_new_name
                         error_image_new_path = os.path.join(error_images_dir, error_image_new_name)
-                        error_label_new_name = f"error_label_{len(os.listdir(error_label_dir))+1}.txt"
-                        error_label_new_path = os.path.join(error_label_dir, error_label_new_name)
+                        error_label_new_path = os.path.join(error_labels_dir, error_label_new_name)
                         print(f"图像出错，图像地址为{img_dir},将该图像保存到{error_image_new_path}")
                         shutil.copy(img_dir, error_image_new_path)
                         shutil.copy(label_dir, error_label_new_path)
@@ -217,18 +259,16 @@ class ImageProcess:
                         cv2.imwrite(mask_image_new_path, mask_image)
                 progress.update(task, advance=1)
 
-
-
 if __name__ == "__main__":
-    # image_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\images\3SE_1203.jpg"
-    # label_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\labels\3SE_1203.txt"
+    # image_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\images\3SE_119.jpg"
+    # label_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\labels\3SE_119.txt"
     # image_process=ImageProcess()
-    # image_process.mask_peripheral_light(image_path,label_path)
+    #
     # cv2.imshow("test", image_process.mask_peripheral_light(image_path,label_path))
     # cv2.waitKey(0)
     #
-    imgs_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\images"
-    labels_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\labels"
+    imgs_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\images"
+    labels_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\labels2d"
     image_process=ImageProcess()
-    image_process.mask_images(imgs_path, labels_path, result_folder_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\masked")
+    image_process.mask_images(imgs_path, labels_path, result_folder_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\masked",rename="GM")
     # image_process.show_image_label(r"C:\Users\wyhao\Desktop\train\images\dc23abb9-3431_jpg.rf.b101a0506df3602ddf894e0ce08adab5.jpg",r"C:\Users\wyhao\Desktop\train\dc23abb9-3431_jpg.rf.b101a0506df3602ddf894e0ce08adab5.txt")

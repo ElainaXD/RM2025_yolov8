@@ -194,4 +194,7 @@ if __name__ == '__main__':
     converter = ImageVideoConverter()
     # images_folder_list=converter.get_subfolders(r"D:\BuffDetect\ToDoDataset\3SENewDataset")
     # converter.renameImgs(images_folder_list,target_folder=r"D:\BuffDetect\ToDoDataset\resorted")
-    converter.renameDataset(r"D:\BuffDetect\3SEDataset\BuffPose\images",r"D:\BuffDetect\3SEDataset\BuffPose\labels2d",r"D:\BuffDetect\3SEDataset\BuffPose\renamed")
+    converter.renameDataset(r"D:\BuffDetect\3SEDataset\Dataset\野生的\images",
+                            r"D:\BuffDetect\3SEDataset\Dataset\野生的\labels2d",
+                            r"D:\BuffDetect\3SEDataset\Dataset\野生的\renamed",
+                            save_name='wild')
