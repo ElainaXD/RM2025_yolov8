@@ -258,7 +258,7 @@ class ImageProcess:
                         shutil.copy(label_dir, mask_label_new_path)
                         cv2.imwrite(mask_image_new_path, mask_image)
                 progress.update(task, advance=1)
-
+    def
 if __name__ == "__main__":
     # image_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\images\3SE_119.jpg"
     # label_path=r"D:\BuffDetect\3SEDataset\BuffPose\renamed\labels\3SE_119.txt"
@@ -266,9 +266,13 @@ if __name__ == "__main__":
     #
     # cv2.imshow("test", image_process.mask_peripheral_light(image_path,label_path))
     # cv2.waitKey(0)
-    #
-    imgs_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\images"
-    labels_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\labels2d"
-    image_process=ImageProcess()
-    image_process.mask_images(imgs_path, labels_path, result_folder_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\masked",rename="GM")
-    # image_process.show_image_label(r"C:\Users\wyhao\Desktop\train\images\dc23abb9-3431_jpg.rf.b101a0506df3602ddf894e0ce08adab5.jpg",r"C:\Users\wyhao\Desktop\train\dc23abb9-3431_jpg.rf.b101a0506df3602ddf894e0ce08adab5.txt")
+
+    image_path=r"D:\BuffDetect\3SEDataset\Dataset\野生的\images\3SE_241_jpg.rf.4cac8215907aa9eb9c2a991b86a7d0af.jpg"
+    label_path=r"D:\BuffDetect\3SEDataset\Dataset\野生的\labels2d\3SE_241_jpg.rf.4cac8215907aa9eb9c2a991b86a7d0af.txt"
+    image_process = ImageProcess()
+    image_process.show_image_label(image_path,label_path)
+    # imgs_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\images"
+    # labels_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\labels2d"
+    # image_process=ImageProcess()
+    # image_process.mask_images(imgs_path, labels_path, result_folder_path=r"D:\BuffDetect\3SEDataset\Dataset\规整的\masked",rename="GM")
+    # # image_process.show_image_label(r"C:\Users\wyhao\Desktop\train\images\dc23abb9-3431_jpg.rf.b101a0506df3602ddf894e0ce08adab5.jpg",r"C:\Users\wyhao\Desktop\train\dc23abb9-3431_jpg.rf.b101a0506df3602ddf894e0ce08adab5.txt")

@@ -594,8 +594,8 @@ class Exporter:
 
         builder = trt.Builder(logger)
         config = builder.create_builder_config()
-        config.max_workspace_size = self.args.workspace * 1 << 30
-        # config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace << 30)  # fix TRT 8.4 deprecation notice
+        # config.max_workspace_size = self.args.workspace * 1 << 30
+        config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, self.args.workspace << 30)  # fix TRT 8.4 deprecation notice
 
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
@@ -628,13 +628,13 @@ class Exporter:
         torch.cuda.empty_cache()
 
         # Write file
-        with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
+        with builder.build_serialized_network(network, config) as engine, open(f, 'wb') as t:
             # Metadata
             meta = json.dumps(self.metadata)
             t.write(len(meta).to_bytes(4, byteorder='little', signed=True))
             t.write(meta.encode())
             # Model
-            t.write(engine.serialize())
+            t.write(engine)
 
         return f, None
 

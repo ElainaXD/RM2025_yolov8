@@ -3,7 +3,7 @@
 
 #path: D:/BuffDetect/BuffDataset/
 
-path: /root/autodl-fs/Version1_splited/
+path: /root/autodl-fs/splite/
 train: images/train
 val: images/val
 
